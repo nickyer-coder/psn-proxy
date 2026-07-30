@@ -1,6 +1,7 @@
-import { getUserBasicPresence } from "psn-api";
+import * as psn from "psn-api";
 
 export default async function handler(req, res) {
+  // Gestion des en-têtes CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Authorization');
   
@@ -17,12 +18,21 @@ export default async function handler(req, res) {
 
   try {
     const authorization = { accessToken };
-    const presence = await getUserBasicPresence(authorization, "me");
+    
+    // Détection dynamique de la bonne fonction selon la version de psn-api
+    const fetchPresence = psn.getUserBasicPresence || psn.getUserPresence;
+    
+    if (typeof fetchPresence !== "function") {
+      throw new Error("Aucune fonction de présence valide trouvée dans psn-api");
+    }
+
+    const presence = await fetchPresence(authorization, "me");
     return res.status(200).json(presence);
+
   } catch (error) {
     return res.status(500).json({ 
       error: "PSN API Error", 
-      message: error.message || error 
+      message: error.message || String(error)
     });
   }
 }
