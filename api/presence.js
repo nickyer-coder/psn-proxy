@@ -1,4 +1,4 @@
-import { getUserPresence } from "psn-api";
+import { getUserBasicPresence } from "psn-api";
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
   try {
     const authorization = { accessToken };
-    const presence = await getUserPresence(authorization, "me");
+    const presence = await getUserBasicPresence(authorization, "me");
     return res.status(200).json(presence);
   } catch (error) {
     return res.status(500).json({ 
