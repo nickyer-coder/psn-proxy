@@ -1,6 +1,11 @@
-import { exchangeNpssoForCode, exchangeCodeForAccessToken, getBasicPresence } from "psn-api";
+import { 
+  exchangeNpssoForCode, 
+  exchangeCodeForAccessToken, 
+  getBasicPresence 
+} from "psn-api";
 
 export default async function handler(req, res) {
+  // Gestion CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Authorization');
   
@@ -22,15 +27,15 @@ export default async function handler(req, res) {
     if (tokenInput.startsWith("v1.")) {
       authorization = { accessToken: tokenInput };
     } else {
-      // Étape 1: Échange du NPSSO contre un code d'accès
+      // 1. Échange du NPSSO contre un code d'accès
       const accessCode = await exchangeNpssoForCode(tokenInput);
-      // Étape 2: Échange du code contre le véritable Access Token
+      // 2. Échange du code contre l'Access Token
       authorization = await exchangeCodeForAccessToken(accessCode);
     }
 
-    // Étape 3: Récupération de la présence
-    const presence = await getBasicPresence(authorization, "me");
-    return res.status(200).json(presence);
+    // 3. Récupération de la présence avec me
+    const response = await getBasicPresence(authorization, "me");
+    return res.status(200).json(response);
 
   } catch (error) {
     return res.status(500).json({ 
