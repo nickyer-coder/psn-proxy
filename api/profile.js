@@ -1,36 +1,36 @@
 import { 
   exchangeNpssoForCode, 
   exchangeCodeForAccessToken, 
-  getProfileFromAccountId // <-- C'est cette fonction exacte qu'il faut utiliser
+  getUserRegister,
+  getProfileFromAccountId 
 } from "psn-api";
 
 export default async function handler(req, res) {
   try {
-    const { npsso, accountId } = req.query;
+    const npsso = req.query.npsso || req.headers.authorization?.replace("Bearer ", "");
 
     if (!npsso) {
-      return res.status(400).json({ error: "Le paramètre NPSSO est requis" });
+      return res.status(400).json({ error: "NPSSO requis" });
     }
 
-    // 1. Authentification
+    // 1. Authentification PSN
     const accessCode = await exchangeNpssoForCode(npsso);
     const authorization = await exchangeCodeForAccessToken(accessCode);
 
-    // 2. Si aucun accountId n'est fourni, on utilise 'me' pour cibler son propre compte
-    const targetAccountId = accountId || "me";
+    // 2. Si aucun accountId fourni, on récupère l'accountId du compte connecté
+    let accountId = req.query.accountId;
+    if (!accountId || accountId === "me") {
+      const userInfo = await getUserRegister(authorization);
+      accountId = userInfo.accountId;
+    }
 
-    // 3. Appel de la bonne fonction
-    const profileResponse = await getProfileFromAccountId(
-      authorization, 
-      targetAccountId
-    );
+    // 3. Récupération du profil
+    const profileResponse = await getProfileFromAccountId(authorization, accountId);
 
     return res.status(200).json(profileResponse);
 
   } catch (error) {
-    console.error("Erreur Profile PSN:", error);
-    return res.status(500).json({ 
-      error: error.message || "Erreur lors de la récupération du profil" 
-    });
+    console.error("Erreur Profile:", error);
+    return res.status(500).json({ error: error.message || "Erreur serveur" });
   }
 }
